@@ -348,7 +348,10 @@ class TestDecrypt:
         encrypted = jwe.encrypt(b"Live long and prosper.", key, enc, ALGORITHMS.DIR)
         header, encrypted_key, iv, cipher_text, auth_tag = encrypted.split(b".")
         tampered = bytearray(base64url_decode(cipher_text))
-        tampered[-1] ^= 0x01
+        # Flip the last byte of the second-to-last block so that only the final
+        # padding byte of the plaintext changes; flipping a byte in the last
+        # block would scramble the whole block and could leave valid padding.
+        tampered[-17] ^= 0x01
         cipher_text = base64url_encode(bytes(tampered))
         encrypted = b".".join((header, encrypted_key, iv, cipher_text, auth_tag))
         with pytest.raises(JWEError) as excinfo:
